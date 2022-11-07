@@ -1,4 +1,3 @@
-
 //Define
 const canvas = document.querySelector("canvas");
 const options = {
