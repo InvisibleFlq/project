@@ -47,8 +47,8 @@ class Block {
 //Draw the map
 for(let i = 0; i < map.length; i++) {
     for(let j = 0; j < map[i].length; j++) {
-        if(map[j][i] === 1) {
-            let current = new Block(i * options.blockSize, j * options.blockSize);
+        if(map[i][j] === 1) {
+            let current = new Block(j * options.blockSize, i * options.blockSize);
             blocks.push(current);
             current.draw();
         } else continue;
