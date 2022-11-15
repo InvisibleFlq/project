@@ -3,8 +3,8 @@ const canvas = document.querySelector("canvas");
 const options = {
     blockColor: "orange",
     blockSize: 50,
-    pacmanSpeed: 5,
-    pacmanRadius: 15,
+    pacmanSpeed: 4,
+    pacmanRadius: 18,
     pacmanColor: "yellow",
 };
 
@@ -113,11 +113,24 @@ window.addEventListener('keydown', (event) => {
 
 //Define gameLoop()
 function gameLoop() {
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    blocks.forEach(block => {
+        
+        if(collisionDetection(block, pacman)) {
+            pacman.vx = 0
+            pacman.vy = 0
+        };
+
+        block.draw();
+    });
     pacman.update();
     requestAnimationFrame(gameLoop);
 };
 
 //Collision detection
 function collisionDetection(block, pacman) {
-    
+    return block.x + options.blockSize >= pacman.x - pacman.r &&
+        block.y + options.blockSize >= pacman.x - pacman.r &&
+        block.x <= pacman.x + pacman.r && 
+        block.y <= pacman.y + pacman.r
 };
