@@ -2,13 +2,20 @@
 const canvas = document.querySelector("canvas");
 const options = {
     blockColor: "orange",
-    blockSize: 50,
+    blockSize: 40,
     pacmanSpeed: 4,
-    pacmanRadius: 18,
+    pacmanRadius: 16,
+    checkRadius: 96,
     pacmanColor: "yellow",
 };
 
 const ctx = canvas.getContext("2d");
+
+//Save last keypress
+let command = {
+    primary: "",
+    secondary: ""
+};
 
 //Map layout
 let map = [
@@ -48,9 +55,7 @@ class Block {
 for(let i = 0; i < map.length; i++) {
     for(let j = 0; j < map[i].length; j++) {
         if(map[i][j] === 1) {
-            let current = new Block(j * options.blockSize, i * options.blockSize);
-            blocks.push(current);
-            current.draw();
+            blocks.push(new Block(j * options.blockSize, i * options.blockSize));
         } else continue;
     };
 };
@@ -70,6 +75,11 @@ class Pacman {
         this.draw();
         this.x += this.vx;
         this.y += this.vy;
+    };
+
+    rollback() {
+        this.x -= this.vx;
+        this.y -= this.vy;
     };
 
     draw() {
@@ -113,24 +123,48 @@ window.addEventListener('keydown', (event) => {
 
 //Define gameLoop()
 function gameLoop() {
-    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    blocks.forEach(block => {
-        
-        if(collisionDetection(block, pacman)) {
-            pacman.vx = 0
-            pacman.vy = 0
-        };
 
-        block.draw();
-    });
+    //clear canvas
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    
+    //draw the map
+    blocks.forEach(block => block.draw());
+    
+    //update pacman position
     pacman.update();
+
+    //check collision
+    let area = getNearest();
+    if(area.some(block => collisionDetection(block, pacman))) pacman.rollback();
+
+
     requestAnimationFrame(gameLoop);
 };
 
 //Collision detection
 function collisionDetection(block, pacman) {
     return block.x + options.blockSize >= pacman.x - pacman.r &&
-        block.y + options.blockSize >= pacman.x - pacman.r &&
+        block.y + options.blockSize >= pacman.y - pacman.r &&
         block.x <= pacman.x + pacman.r && 
         block.y <= pacman.y + pacman.r
+};
+
+function collisionRadiusCircle(block) {
+    return block.x + options.blockSize >= pacman.x - options.checkRadius &&
+        block.y + options.blockSize >= pacman.y - options.checkRadius &&
+        block.x <= pacman.x + options.checkRadius && 
+        block.y <= pacman.y + options.checkRadius
+};
+
+function possibleMoves(pacman) {
+    let possible = [];
+};
+
+function getNearest() {
+    let near = [];
+    for(let block of blocks) {
+        if(collisionRadiusCircle(block)) near.push(block);
+        else continue;
+    };
+    return near;
 };
