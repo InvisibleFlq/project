@@ -1,4 +1,4 @@
-//Define
+//Define vars
 const canvas = document.querySelector("canvas");
 const options = {
     blockColor: "orange",
@@ -51,7 +51,7 @@ class Block {
     };
 };
 
-//Draw the map
+//Fill map arr with block bojs
 for(let i = 0; i < map.length; i++) {
     for(let j = 0; j < map[i].length; j++) {
         if(map[i][j] === 1) {
