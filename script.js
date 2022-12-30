@@ -21,10 +21,10 @@ let command = {
 let map = [
     [1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 1, 0, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1]
 ];
@@ -89,6 +89,7 @@ class Pacman {
         ctx.fill();
         ctx.closePath();
     };
+
 };
 
 //Draw pacman
@@ -99,26 +100,8 @@ gameLoop();
 
 //Define controls
 window.addEventListener('keydown', (event) => {
-    if(event.key == "w") {
-        pacman.vy = -options.pacmanSpeed;
-        pacman.vx = 0;
-    };
-
-    if(event.key == "a") {
-        pacman.vx = -options.pacmanSpeed;
-        pacman.vy = 0;
-    };
-
-    if(event.key == "s") {
-        pacman.vy = options.pacmanSpeed;
-        pacman.vx = 0;
-    };
-
-    if(event.key == "d") {
-        pacman.vx = options.pacmanSpeed;
-        pacman.vy = 0;
-    };
-
+    command.secondary = event.key;
+    if(command.primary == "") command.primary = command.secondary;
 });
 
 //Define gameLoop()
@@ -137,6 +120,30 @@ function gameLoop() {
     let area = getNearest();
     if(area.some(block => collisionDetection(block, pacman))) pacman.rollback();
 
+    //possible moves check
+    let possible = possibleMoves(pacman);
+
+    if(possible.some(el => el == command.secondary)) command.primary = command.secondary;
+
+    if(command.primary == "w") {
+        pacman.vy = -options.pacmanSpeed;
+        pacman.vx = 0;
+    };
+
+    if(command.primary == "a") {
+        pacman.vx = -options.pacmanSpeed;
+        pacman.vy = 0;
+    };
+
+    if(command.primary == "s") {
+        pacman.vy = options.pacmanSpeed;
+        pacman.vx = 0;
+    };
+
+    if(command.primary == "d") {
+        pacman.vx = options.pacmanSpeed;
+        pacman.vy = 0;
+    };
 
     requestAnimationFrame(gameLoop);
 };
@@ -156,8 +163,39 @@ function collisionRadiusCircle(block) {
         block.y <= pacman.y + options.checkRadius
 };
 
+//get possible moves for pacman
 function possibleMoves(pacman) {
     let possible = [];
+
+    let area = getNearest();
+
+    pacman.x += options.pacmanSpeed;
+    if(!area.some(block => collisionDetection(block, pacman))) {
+        possible.push("d");
+    };
+    pacman.x -= options.pacmanSpeed;
+    
+    pacman.x -= options.pacmanSpeed;
+    if(!area.some(block => collisionDetection(block, pacman))) {
+        possible.push("a");
+    };
+    pacman.x += options.pacmanSpeed;
+
+    pacman.y += options.pacmanSpeed;
+    if(!area.some(block => collisionDetection(block, pacman))) {
+        possible.push("s");
+    };
+    pacman.y -= options.pacmanSpeed;
+
+    pacman.y -= options.pacmanSpeed;
+    if(!area.some(block => collisionDetection(block, pacman))) {
+        possible.push("w");
+    };
+    pacman.y += options.pacmanSpeed;
+
+    console.log(possible);
+
+    return possible;
 };
 
 function getNearest() {
