@@ -2,3 +2,11 @@ body {
     background-color: black;
     margin: 0;
 }
+
+p {
+    color: black;
+    position: absolute;
+    top: -5px;
+    left: 15px;
+    font-family: sans-serif;
+}
