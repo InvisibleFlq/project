@@ -1,5 +1,6 @@
 //Define vars
 const canvas = document.querySelector("canvas");
+const score = document.querySelector("p");
 const options = {
     blockColor: "orange",
     blockSize: 40,
@@ -7,6 +8,9 @@ const options = {
     pacmanRadius: 16,
     checkRadius: 96,
     pacmanColor: "yellow",
+    edibleColor: "white",
+    edibleRadius: 6,
+    foodEatenPoints: 100,
 };
 
 const ctx = canvas.getContext("2d");
@@ -29,8 +33,9 @@ let map = [
     [1, 1, 1, 1, 1, 1, 1, 1]
 ];
 
-//Array of block objs
+//Array of block objs && food objs
 let blocks = [];
+let edibles = [];
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -51,12 +56,34 @@ class Block {
     };
 };
 
-//Fill map arr with block bojs
+//Food
+class Edible {
+    exists = true;
+
+    constructor({x, y}) {
+        this.x = x;
+        this.y = y;
+    };
+
+    draw() {
+        if(this.exists) {
+            ctx.fillStyle = options.edibleColor;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, options.edibleRadius, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.closePath();
+        };
+    }
+};
+
+//Fill map arr with block objs && drugs
 for(let i = 0; i < map.length; i++) {
     for(let j = 0; j < map[i].length; j++) {
         if(map[i][j] === 1) {
             blocks.push(new Block(j * options.blockSize, i * options.blockSize));
-        } else continue;
+        } else {
+            edibles.push(new Edible({x: j * options.blockSize + options.blockSize / 2, y: i * options.blockSize + options.blockSize / 2}));
+        };
     };
 };
 
@@ -84,9 +111,38 @@ class Pacman {
 
     draw() {
         ctx.fillStyle = options.pacmanColor;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI);
-        ctx.fill();
+
+        if(command.primary == "a") {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 1.25 * Math.PI, 0.25 * Math.PI, false);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 1.75 * Math.PI, 0.75 * Math.PI, false);
+            ctx.fill();
+        } else if(command.primary == "s") {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0.75 * Math.PI, 1.75 * Math.PI, false);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 1.25 * Math.PI, 0.25 * Math.PI, false);
+            ctx.fill();
+        } else if(command.primary == "w") {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 1.75 * Math.PI, 0.75 * Math.PI, false);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0.25 * Math.PI, 1.25 * Math.PI, false);
+            ctx.fill();
+        } else {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0.25 * Math.PI, 1.25 * Math.PI, false);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r, 0.75 * Math.PI, 1.75 * Math.PI, false);
+            ctx.fill();
+        };
+        
+        ctx.stroke();
         ctx.closePath();
     };
 
@@ -94,6 +150,9 @@ class Pacman {
 
 //Draw pacman
 let pacman = new Pacman(1.5 * options.blockSize, 1.5 * options.blockSize);
+
+//Points
+let points = -100;
 
 //Start gameLoop()
 gameLoop();
@@ -117,9 +176,23 @@ function gameLoop() {
     pacman.update();
 
     //check collision
-    let area = getNearest();
-    if(area.some(block => collisionDetection(block, pacman))) pacman.rollback();
+    let area = getNearestBlock();
+    if(area.some(block => blockCollisionDetection(block, pacman))) pacman.rollback();
+    
+    //drug test
+    for(let i = 0; i < edibles.length; i++) {
+        if(circleCollisionDetection(edibles[i], pacman) < options.edibleRadius + options.pacmanRadius) {
+            if(edibles[i].exists) points += options.foodEatenPoints;
+            edibles[i].exists = false;
+        };
+    };
 
+    //update score
+    score.textContent = points;
+    
+    //draw me a sandwich
+    edibles.forEach(edible => edible.draw());
+    
     //possible moves check
     let possible = possibleMoves(pacman);
 
@@ -149,11 +222,15 @@ function gameLoop() {
 };
 
 //Collision detection
-function collisionDetection(block, pacman) {
+function blockCollisionDetection(block, pacman) {
     return block.x + options.blockSize >= pacman.x - pacman.r &&
         block.y + options.blockSize >= pacman.y - pacman.r &&
         block.x <= pacman.x + pacman.r && 
         block.y <= pacman.y + pacman.r
+};
+
+function circleCollisionDetection(edible, pacman) {
+    return Math.sqrt((edible.x - pacman.x) ** 2 + (edible.y - pacman.y) ** 2);
 };
 
 function collisionRadiusCircle(block) {
@@ -167,28 +244,28 @@ function collisionRadiusCircle(block) {
 function possibleMoves(pacman) {
     let possible = [];
 
-    let area = getNearest();
+    let area = getNearestBlock();
 
     pacman.x += options.pacmanSpeed;
-    if(!area.some(block => collisionDetection(block, pacman))) {
+    if(!area.some(block => blockCollisionDetection(block, pacman))) {
         possible.push("d");
     };
     pacman.x -= options.pacmanSpeed;
     
     pacman.x -= options.pacmanSpeed;
-    if(!area.some(block => collisionDetection(block, pacman))) {
+    if(!area.some(block => blockCollisionDetection(block, pacman))) {
         possible.push("a");
     };
     pacman.x += options.pacmanSpeed;
 
     pacman.y += options.pacmanSpeed;
-    if(!area.some(block => collisionDetection(block, pacman))) {
+    if(!area.some(block => blockCollisionDetection(block, pacman))) {
         possible.push("s");
     };
     pacman.y -= options.pacmanSpeed;
 
     pacman.y -= options.pacmanSpeed;
-    if(!area.some(block => collisionDetection(block, pacman))) {
+    if(!area.some(block => blockCollisionDetection(block, pacman))) {
         possible.push("w");
     };
     pacman.y += options.pacmanSpeed;
@@ -198,7 +275,7 @@ function possibleMoves(pacman) {
     return possible;
 };
 
-function getNearest() {
+function getNearestBlock() {
     let near = [];
     for(let block of blocks) {
         if(collisionRadiusCircle(block)) near.push(block);
